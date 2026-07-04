@@ -1,16 +1,69 @@
-# React + Vite
+BeamWise
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+BeamWise is a React-based web application that automates the design of reinforced concrete (RCC) beams according to IS 456:2000. The project was developed by converting an Excel-based beam design workflow into an interactive web application, making the design process faster, more intuitive, and easier to visualize.
 
-Currently, two official plugins are available:
+Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Website:https://beamwise.vercel.app/
 
-## React Compiler
+Source Code
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+GitHub Repository: https://github.com/v-ai-sh-navi/BeamWise
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Features
+
+- Beam geometry design
+- Dead load and live load calculations
+- Ultimate load, moment and shear calculations
+- Effective depth and overall depth recommendation
+- Flexural design
+- Reinforcement design (number of bars & steel area)
+- Shear design and stirrup spacing
+- Safety checks for flexure and shear
+
+
+Tech Stack
+
+- React
+- JavaScript (ES6)
+- Vite
+- CSS
+- Git & GitHub
+- Vercel
+
+---
+
+Project Structure
+
+
+BeamWise
+│
+├── src
+│   ├── components
+│   ├── utils
+│   ├── constants.js
+│   ├── App.jsx
+│   └── App.css
+│
+├── public
+└── package.json
+
+
+
+
+Planned Enhancements
+
+- Deflection check
+- Crack width check
+- Beam cross-section visualization
+- PDF report generation
+- Slab and column design modules
+
+---
+
+Author
+
+Vaishnavi Patil
+
+Civil Engineering Undergraduate, NIT Goa
