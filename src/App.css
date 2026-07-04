@@ -28,7 +28,7 @@ body{
 h1{
     text-align:center;
     color:#0F4C81;
-    margin-bottom:10px;
+    margin: bottom 10px;
 }
 
 h3{
@@ -40,6 +40,17 @@ h3{
 h2{
     color:#0F4C81;
     margin-bottom:20px;
+}
+/*==============================
+RESULTS TITLE
+==============================*/
+
+.results-title{
+    text-align: center;
+    color: #0F4C81;
+    font-size: 56px;
+    font-weight: 700;
+    margin: 60px 0 35px;
 }
 
 .input-field{
@@ -68,19 +79,37 @@ h2{
 }
 
 button{
+
     width:100%;
-    padding:15px;
+
+    padding:16px;
+
     background:#0F4C81;
+
     color:white;
-    border:none;
-    border-radius:10px;
+
     font-size:18px;
+
+    font-weight:600;
+
+    border:none;
+
+    border-radius:12px;
+
     cursor:pointer;
-    transition:.3s;
+
+    transition:0.3s;
+
+    margin:20px 0 40px;
+
 }
 
 button:hover{
-    background:#1565c0;
+
+    background:#0b3d67;
+
+    transform:translateY(-2px);
+
 }
 
 .beam-box{
@@ -111,4 +140,98 @@ button:hover{
 .not-safe{
     color:red;
     font-weight:bold;
+}
+/* ===========================
+   HEADER
+=========================== */
+
+.header{
+    text-align:center;
+    margin-bottom:40px;
+}
+
+.header h1{
+    font-size:52px;
+    color:#0F4C81;
+    margin-bottom:10px;
+}
+
+.header p{
+    font-size:22px;
+    font-weight:500;
+    color:#555;
+    margin-bottom:8px;
+}
+
+.header span{
+    font-size:15px;
+    color:#888;
+}
+
+.section-card{
+
+background:#ffffff;
+
+padding:30px;
+
+margin-bottom:30px;
+
+border-radius:16px;
+
+box-shadow:0 8px 24px rgba(0,0,0,.08);
+
+max-width:900px;
+
+}
+
+.section-card h2{
+
+font-size:28px;
+
+margin-bottom:25px;
+
+color:#0F4C81;
+
+border-bottom:2px solid #eef2f7;
+
+padding-bottom:12px;
+
+}
+/*==========================
+INPUT GRID
+==========================*/
+
+.input-grid{
+
+display:grid;
+
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+
+gap:24px;
+
+}
+/*==============================
+INPUTS & SELECTS
+==============================*/
+
+.input-field input,
+.input-field select{
+
+    width:100%;
+    padding:14px 16px;
+    font-size:16px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    outline:none;
+    box-sizing:border-box;
+    transition:0.2s ease;
+
+}
+
+.input-field input:focus,
+.input-field select:focus{
+
+    border-color:#0F4C81;
+    box-shadow:0 0 0 3px rgba(15,76,129,0.15);
+
 }
