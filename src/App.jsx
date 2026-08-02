@@ -23,6 +23,9 @@ import MaterialCard from "./components/MaterialCard";
 import LoadingCard from "./components/LoadingCard";
 import ReinforcementCard from "./components/ReinforcementCard";
 import ShearCard from "./components/ShearCard";
+import BeamSummary from "./components/BeamSummary";
+import ServiceabilityCard from "./components/ServiceabilityCard";
+import { generatePDF } from "./utils/pdfGenerator";
 import "./App.css";
 
 function App() {
@@ -53,7 +56,8 @@ function App() {
   const [shearResults, setShearResults] = useState(null);
 
   const [stirrupResults, setStirrupResults] = useState(null);
-
+  const [serviceabilityResults, setServiceabilityResults] = useState(null);
+  const [inputs, setInputs] = useState(null);
   const calculateBeam = () => {
 
     const inputs = {
@@ -77,21 +81,25 @@ function App() {
         fck:Number(fck.replace("M","")),
 
         fy:Number(fy.replace("Fe","")),
+        mainBarDia: Number(mainBarDia),
+        stirrupDia: Number(stirrupDia),
 
         exposure
 
     };
+  
+    setInputs(inputs);
 
     const geo =
         geometry(inputs);
-    console.log("Geometry:", geo);
+    
 
     const loads =
         loadCalculations(
             inputs,
             geo
         );
-    console.log("Loads:", loads);
+    
 
     const depth =
         depthCalculations(
@@ -99,7 +107,9 @@ function App() {
             geo,
             loads
         );
-    console.log("Depth:", depth);
+
+   
+
     const flexure = flexureDesign(
 
     {
@@ -115,7 +125,7 @@ function App() {
     loads
 
     );
-    console.log("Flexure:", flexure);
+    
 
 setResults({
 
@@ -131,6 +141,7 @@ setResults({
 
     
 };
+
   return (
     <div className="container">
     <Header/>
@@ -187,54 +198,15 @@ setResults({
 
   <div className="results">
 
-  <div className="beam-box"> 
-
-
-<h2>Recommended Beam</h2>
-
-<h1>
-
-{beamWidth} × {results.depth.DProvided}
-
-</h1>
-
-<p>(mm)</p>
-
+  
+    <BeamSummary
+    beamWidth={beamWidth}
+    results={results}
+    />
 </div>
 
-<p>
-Effective Depth :
-<b>
-{" "}
-{results.depth.dProvided.toFixed(2)}
-mm
-</b>
-</p>
-
-<hr/>
-
-<p>
-Ultimate Moment :
-<b>
-{" "}
-{results.loads.Mu.toFixed(2)}
-kNm
-</b>
-</p>
-
-<p>
-Ultimate Shear :
-<b>
-{" "}
-{results.loads.Vu.toFixed(2)}
-kN
-</b>
-</p>
-
-</div>
 </>
-
-  )}
+)}
 
 {results && (
 
@@ -261,6 +233,10 @@ results={results}
 setReinforcementResults={setReinforcementResults}
 
 mainBarDiameters={mainBarDiameters}
+
+stirrupDia={stirrupDia}
+
+setStirrupDia={setStirrupDia}
 
 />
 
@@ -320,6 +296,7 @@ reinforcementResults.xuCheck==="SAFE"
 </div>
 
 )}
+
 {reinforcementResults && (
 <ShearCard
 
@@ -393,10 +370,175 @@ stirrupResults.shearCheck==="SAFE"
 
 
               
-            </div>
+            
+
+
+{stirrupResults && shearResults && (
+
+<ServiceabilityCard
+
+beamWidth={beamWidth}
+
+span={span}
+
+fck={fck}
+
+results={results}
+
+reinforcementResults={reinforcementResults}
+
+setServiceabilityResults={setServiceabilityResults}
+
+/>
+
+)}
+{serviceabilityResults && (
+
+<div className="results">
+
+<h2>Serviceability Check</h2>
+
+<h3>Cracking Check</h3>
+
+<p>
+Service Moment :
+<b>{(serviceabilityResults.MuService/1000000).toFixed(2)} kN·m</b>
+</p>
+
+<p>
+Cracking Moment :
+<b>{(serviceabilityResults.Mcr/1000000).toFixed(2)} kN·m</b>
+</p>
+
+<p>
+Cracking Status :
+<b>
+
+<span
+className={
+serviceabilityResults.crackStatus==="UNCRACKED"
+?
+"safe"
+:
+"not-safe"
+}
+>
+
+{serviceabilityResults.crackStatus}
+
+</span>
+
+</b>
+</p>
+
+<hr/>
+
+<h3>Deflection Check</h3>
+
+<p>
+Short Term Deflection :
+<b>{serviceabilityResults.deltaShort.toFixed(2)} mm</b>
+</p>
+
+<p>
+Long Term Deflection :
+<b>{serviceabilityResults.deltaLongTerm.toFixed(2)} mm</b>
+</p>
+
+<p>
+Total Deflection :
+<b>{serviceabilityResults.deltaTotal.toFixed(2)} mm</b>
+</p>
+
+<p>
+Allowable Deflection :
+<b>{serviceabilityResults.deltaAllow.toFixed(2)} mm</b>
+</p>
+
+<p>
+Utilization :
+<b>
+
+{(
+
+serviceabilityResults.deltaTotal
+
+/
+
+serviceabilityResults.deltaAllow
+
+*100
+
+).toFixed(1)}
+
+%
+
+</b>
+
+</p>
+
+<p>
+Status :
+<b>
+
+<span
+className={
+serviceabilityResults.deflectionStatus==="SAFE"
+?
+"safe"
+:
+"not-safe"
+}
+>
+
+{serviceabilityResults.deflectionStatus}
+
+</span>
+
+</b>
+</p>
+
+</div>
+
+
+)}
+{serviceabilityResults && (
+   <button
+    onClick={() => {
+    const pdfInputs = {
+        beamWidth: Number(beamWidth),
+        span: Number(span),
+        slabSpan: Number(slabSpan),
+        slabThickness: Number(slabThickness),
+        cover: Number(cover),
+        floorFinish: Number(floorFinish),
+        liveLoad: Number(liveLoad),
+        unitWeight: Number(unitWeight),
+        fck: Number(fck.replace("M", "")),
+        fy: Number(fy.replace("Fe", "")),
+        mainBarDia: Number(mainBarDia),
+        stirrupDia: Number(stirrupDia),
+        exposure,
+    };
+
+    generatePDF(
+        pdfInputs,
+        results,
+        reinforcementResults,
+        shearResults,
+        stirrupResults,
+        serviceabilityResults
+    );
+}}
+>
+    Download PDF
+</button>
+)}
+    </div>
           );
-    }
 
 
+
+}
 
 export default App; 

@@ -8,7 +8,6 @@ function InputSelect({ label, value, onChange, options }) {
       <select
         value={value}
         onChange={(e) => {
-          console.log("Selected:", e.target.value);
           onChange(e);
         }}
       >

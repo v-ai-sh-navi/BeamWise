@@ -19,7 +19,7 @@ body{
 
 .card,.results{
     background:white;
-    padding:25px;
+    padding: 25px;
     border-radius:15px;
     margin-bottom:25px;
     box-shadow:0 5px 15px rgba(0,0,0,0.08);
@@ -180,7 +180,7 @@ border-radius:16px;
 
 box-shadow:0 8px 24px rgba(0,0,0,.08);
 
-max-width:900px;
+max-width:1100px;
 
 }
 
@@ -218,7 +218,7 @@ INPUTS & SELECTS
 .input-field select{
 
     width:100%;
-    padding:14px 16px;
+    padding:14px 14px;
     font-size:16px;
     border:1px solid #d1d5db;
     border-radius:10px;
@@ -233,5 +233,42 @@ INPUTS & SELECTS
 
     border-color:#0F4C81;
     box-shadow:0 0 0 3px rgba(15,76,129,0.15);
+
+}
+.results hr{
+
+margin:25px 0;
+
+border:none;
+
+border-top:1px solid #ddd;
+
+}
+
+.results h3{
+
+margin-top:20px;
+
+margin-bottom:15px;
+
+color:#0F4C81;
+
+text-align:left;
+
+font-size:20px;
+
+}
+
+.results p{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:10px 0;
+
+border-bottom:1px solid #eee;
 
 }

@@ -1,3 +1,7 @@
+import {
+    tauCTable,
+    tauCMaxTable
+} from "../constants";
 // =======================
 // GEOMETRY
 // =======================
@@ -134,10 +138,8 @@ export function loadCalculations(inputs, geo) {
 // =======================
 
 export function depthCalculations(inputs, geo, loads) {
-  const { beamWidth, fck} = inputs;
-  const mainBarDia = 20;
-  const stirrupDia = 8;
-
+  const { beamWidth, fck, mainBarDia, stirrupDia} = inputs;
+  
   const dRequiredFlexure = Math.sqrt(
     (loads.Mu * 1000000) /
       (geo.k * fck * beamWidth)
@@ -150,7 +152,7 @@ export function depthCalculations(inputs, geo, loads) {
     mainBarDia / 2;
 
   const DProvided =
-    Math.round(
+    Math.ceil(
         DRequired / 25
     ) * 25;
   const dProvided =
@@ -179,13 +181,10 @@ export function flexureDesign(inputs, geo, depth, loads) {
 
     const Mu = loads.Mu;
 
-    // Row 42
     const A1 = 0.87 * fy * d;
 
-    // Row 43
     const A2 = fy / (fck * beamWidth * d);
 
-    // Row 44
     const Ast =
         (
             A1 -
@@ -198,14 +197,12 @@ export function flexureDesign(inputs, geo, depth, loads) {
             2 * A1 * A2
         );
 
-    // Row 45
     const AstMin =
         0.0036 *
         beamWidth *
         d;
 
-    // Row 46
-    const AstProvided =
+    const AstRequired =
         Math.max(
             Ast,
             AstMin
@@ -214,12 +211,12 @@ export function flexureDesign(inputs, geo, depth, loads) {
     
 
     return {
-
+        Mu,
         A1,
         A2,
         Ast,
         AstMin,
-        AstProvided,
+        AstRequired,
 
     };
 
@@ -244,7 +241,7 @@ export function reinforcementDesign(
 
     const d = depth.dProvided;
 
-    const AstProvided = flexure.AstProvided;
+    const AstRequired = flexure.AstRequired;
 
     // Area of one bar
     const areaPerBar =
@@ -256,18 +253,19 @@ export function reinforcementDesign(
     // Number of bars
     const noOfBars =
         Math.ceil(
-            AstProvided /
+            AstRequired /
             areaPerBar
         );
 
     // Area actually provided
+
     const AstActual =
         noOfBars *
         areaPerBar;
 
     // Steel percentage
     const steelPercentage =
-        flexure.AstProvided * 100 /
+        flexure.AstRequired * 100 /
         (beamWidth * d);
 
     // Neutral axis depth
@@ -275,7 +273,7 @@ export function reinforcementDesign(
         (
         0.87 *
         fy *
-        flexure.AstProvided
+        flexure.AstRequired
         )
         /
         (
@@ -295,7 +293,7 @@ export function reinforcementDesign(
     return {
 
         areaPerBar,
-        AstProvided,
+        AstRequired,
         noOfBars,
         AstActual,
         steelPercentage,
@@ -311,6 +309,50 @@ export function reinforcementDesign(
 // =======================
 // SHEAR
 // =======================
+function getTauC(pt, fck) {
+
+    // Limit pt to the range of IS 456 Table 19
+    pt = Math.max(0.15, Math.min(3.0, pt));
+
+    // Available concrete grades
+    const grades = [20, 25, 30, 35, 40];
+
+    // Use nearest available grade
+    let grade = grades[0];
+    let minDiff = Math.abs(fck - grades[0]);
+
+    for (let i = 1; i < grades.length; i++) {
+        const diff = Math.abs(fck - grades[i]);
+
+        if (diff < minDiff) {
+            minDiff = diff;
+            grade = grades[i];
+        }
+    }
+
+    // Linear interpolation between reinforcement percentages
+    for (let i = 0; i < tauCTable.length - 1; i++) {
+
+        const lower = tauCTable[i];
+        const upper = tauCTable[i + 1];
+
+        if (pt >= lower.pt && pt <= upper.pt) {
+
+            const tauLower = lower.values[grade];
+            const tauUpper = upper.values[grade];
+
+            return (
+                tauLower +
+                ((pt - lower.pt) *
+                    (tauUpper - tauLower)) /
+                    (upper.pt - lower.pt)
+            );
+        }
+    }
+
+    // If pt = 3%
+    return tauCTable[tauCTable.length - 1].values[grade];
+}
 
 export function shearDesign(
     inputs,
@@ -333,41 +375,13 @@ export function shearDesign(
         (beamWidth * d);
 
     const pt =
-        flexure.AstProvided * 100 /
+        flexure.AstRequired * 100 /
         (beamWidth * d);
-    console.log({
-    AstProvided: flexure.AstProvided,
-    pt,
-    fy,
-    fck,
-    beamWidth,
-    d
-});
 
-    const beta =
-        Math.max(
-            (0.8 * fy) /
-            (6.89 * pt * 100),
-            1
-        );
+    const tauC = getTauC(pt, fck);
 
-    const tauC =
-        (
-            0.85 *
-            Math.sqrt(0.8 * fck)
-            -
-            Math.sqrt(1 + 5 * beta)
-            -
-            1
-        ) /
-        (
-            6 * beta
-        );
-
-    const tauCMax =
-        geo.tauCMaxFactor *
-        Math.sqrt(fck);
-
+    const tauCMax = tauCMaxTable[fck];
+  
     const tauCEffective =
         Math.min(
             tauC,
@@ -378,7 +392,6 @@ export function shearDesign(
 
         tauV,
         pt,
-        beta,
         tauC,
         tauCMax,
         tauCEffective
@@ -414,37 +427,39 @@ export function stirrupDesign(
         stirrupDia /
         4;
 
-    const stirrupSpacing =
-        Math.min(
+    let stirrupSpacing;
 
-            (
-                0.87 *
-                fy *
-                Asv
-            )
+if (shear.tauV <= shear.tauC) {
 
-            /
+    // Minimum shear reinforcement
+    stirrupSpacing = Math.min(
+        0.75 * d,
+        300
+    );
 
-            (
+} else {
 
-                (shear.tauV - shear.tauCEffective)
+    // Design shear reinforcement
+    stirrupSpacing = Math.min(
 
-                *
+        (0.87 * fy * Asv) /
 
-                beamWidth
+        (
+            (shear.tauV - shear.tauC) *
+            beamWidth
+        ),
 
-            ),
+        0.75 * d,
 
-            0.75 * d,
+        300
 
-            300
+    );
 
-        );
-
+}
     const shearCheck =
-        stirrupSpacing <= 300
-            ? "SAFE"
-            : "NOT SAFE";
+    shear.tauV <= shear.tauCMax
+        ? "SAFE"
+        : "NOT SAFE";
 
     return{
 
@@ -454,4 +469,181 @@ export function stirrupDesign(
 
     };
 
+}
+// =======================
+// SERVICEABILITY CHECK
+// =======================
+export function serviceabilityDesign(inputs, results, reinforcementResults) {
+
+    const b = Number(inputs.beamWidth);
+
+    const D = results.depth.DProvided;
+
+    const d = results.depth.dProvided;
+
+    const L = Number(inputs.span) ;      // mm
+    
+    const fck = Number(inputs.fck);
+
+    const Ast = reinforcementResults.AstActual;
+
+    const Mu = results.flexure.Mu;             // kNm
+
+    const MuService = (Mu / 1.5) * 1e6; 
+           // Nmm
+          
+    
+    /* -----------------------------
+       Elastic Properties
+    ----------------------------- */
+
+    const Ec = 5000 * Math.sqrt(fck);
+
+    const Es = 200000;
+
+    const m = Es / Ec;
+
+    /* -----------------------------
+       Gross Section
+    ----------------------------- */
+
+    const Ig = (b * Math.pow(D, 3)) / 12;
+
+    const fcr = 0.7 * Math.sqrt(fck);
+
+    const Z = Ig / (D / 2);
+   
+
+    const Mcr = fcr * Z;
+
+    /* -----------------------------
+       Cracked Section
+    ----------------------------- */
+
+    const x =
+        (m * Ast) /
+        (b * (1 + (m * Ast) / (b * d)));
+        
+   
+    const Icr =
+        (b * Math.pow(x, 3)) / 3 +
+        m * Ast * Math.pow(d - x, 2);
+      
+
+    /* -----------------------------
+       Crack Check
+    ----------------------------- */
+   
+
+    const crackStatus =
+        MuService <= Mcr
+            ? "UNCRACKED"
+            : "CRACKED";
+
+    /* -----------------------------
+       Effective Inertia
+    ----------------------------- */
+
+    const Ieff =
+        Icr +
+        (Ig - Icr) *
+        Math.pow(Mcr / (MuService * 1e6), 2);
+
+    /* -----------------------------
+       Short-Term Deflection
+    ----------------------------- */
+
+    const w = results.loads.ultimateLoad ;
+
+    let deltaShort;
+
+    if (crackStatus === "UNCRACKED") {
+
+        deltaShort =
+            (5 * (w/1.5) * Math.pow(L, 4)) /
+            (384 * Ec * Ig);
+
+    }
+
+    else {
+
+        deltaShort =
+            (5 * (w/1.5) * Math.pow(L, 4)) /
+            (384 * Ec * Ieff);
+
+    }
+
+    /* -----------------------------
+       Long-Term Deflection
+    ----------------------------- */
+
+    const creepCoefficient = 1.6;
+
+    const deltaCreep =
+        deltaShort * creepCoefficient;
+
+    const shrinkageStrain = 0.0003;
+
+    const deltaShrinkage =
+        (0.125 * shrinkageStrain * Math.pow(L, 2)) /
+        (8 * D);
+
+    const deltaLongTerm =
+        deltaCreep + deltaShrinkage;
+
+    const deltaTotal =
+        deltaShort + deltaLongTerm;
+
+    const deltaAllow =
+        L / 250;
+
+    const deflectionStatus =
+        deltaTotal <= deltaAllow
+            ? "SAFE"
+            : "NOT SAFE";
+
+    return {
+
+    MuService,
+
+    Ec,
+    Es,
+    m,
+
+    Ig,
+
+    fcr,
+
+    Z,
+
+    Mcr,
+
+    x,
+
+    Icr,
+
+    crackStatus,
+
+    Ieff,
+
+    deltaShort,
+
+    creepCoefficient,
+
+    deltaCreep,
+
+    shrinkageStrain,
+
+    deltaShrinkage,
+
+    deltaLongTerm,
+
+    deltaTotal,
+
+    deltaAllow,
+
+    deflectionStatus
+   
+
+};
 }

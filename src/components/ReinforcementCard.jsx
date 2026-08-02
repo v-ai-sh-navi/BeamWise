@@ -31,6 +31,7 @@ onChange={(e)=>{
 
 const dia = Number(e.target.value);
 
+
 setMainBarDia(dia);
 
 const reinforcement = reinforcementDesign(
