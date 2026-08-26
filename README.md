@@ -36,7 +36,7 @@ Tech Stack
 
 Project Structure
 
-
+```
 BeamWise
 │
 ├── src
@@ -50,7 +50,7 @@ BeamWise
 └── package.json
 
 
-
+```
 
 Planned Enhancements
 
