@@ -48,11 +48,6 @@ BeamWise/
 └── package.json
 ```
 
-## Planned Enhancements
-
-- Slab design module
-- Column design module
-
 ## Future Scope
 
 BeamWise aims to expand into a more comprehensive RCC structural design platform by integrating slab and column design modules alongside the existing beam design functionality.
